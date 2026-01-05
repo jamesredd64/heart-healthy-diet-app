@@ -2,9 +2,9 @@ import { useMealSchedule } from '@/hooks/useMealSchedule';
 import { MealSection } from '@/components/MealSection';
 import { DailyOverview } from '@/components/DailyOverview';
 import { HeartHealthSuggestions } from '@/components/HeartHealthSuggestions';
+import { InitialMenuSelector } from '@/components/InitialMenuSelector';
 import { MealType } from '@/types/meal';
-import { Button } from '@/components/ui/button';
-import { Heart, RotateCcw } from 'lucide-react';
+import { Heart } from 'lucide-react';
 
 const Index = () => {
   const {
@@ -14,6 +14,8 @@ const Index = () => {
     removeFood,
     getMealHealthScore,
     resetToDefaults,
+    setMealFoods,
+    resetAllMenus,
   } = useMealSchedule();
 
   const mealTypes: MealType[] = ['breakfast', 'lunch', 'dinner'];
@@ -32,15 +34,15 @@ const Index = () => {
               <p className="text-xs text-muted-foreground">Heart-Healthy Diet Planner</p>
             </div>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={resetToDefaults}
-            className="border-border/50 text-muted-foreground hover:border-primary hover:text-primary"
-          >
-            <RotateCcw className="mr-2 h-4 w-4" />
-            Reset
-          </Button>
+          <InitialMenuSelector
+            onSetInitialMenu={setMealFoods}
+            onResetAllMenus={resetAllMenus}
+            currentFoods={{
+              breakfast: schedule.breakfast.foods,
+              lunch: schedule.lunch.foods,
+              dinner: schedule.dinner.foods,
+            }}
+          />
         </div>
       </header>
 
@@ -52,6 +54,9 @@ const Index = () => {
           </h2>
           <p className="mx-auto max-w-2xl text-muted-foreground">
             Set your meal times, add nutritious foods, and track your heart health score throughout the day.
+            <span className="block mt-1 text-sm text-sage">
+              💡 Tip: Edit breakfast time to automatically adjust lunch and dinner times!
+            </span>
           </p>
         </div>
       </section>
@@ -79,7 +84,7 @@ const Index = () => {
               schedule={schedule} 
               getHealthScore={getMealHealthScore}
             />
-            <HeartHealthSuggestions />
+            <HeartHealthSuggestions onAddFood={addFood} />
           </div>
         </div>
       </main>

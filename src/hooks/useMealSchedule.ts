@@ -4,6 +4,40 @@ import { v4 as uuidv4 } from 'uuid';
 
 const STORAGE_KEY = 'heart-healthy-meal-schedule';
 
+// Time offset constants (in minutes from breakfast)
+const LUNCH_OFFSET_MIN = 240; // 4 hours
+const LUNCH_OFFSET_MAX = 270; // 4.5 hours (uses 4:30 offset)
+const DINNER_OFFSET_MIN = 570; // 9.5 hours
+const DINNER_OFFSET_MAX = 600; // 10 hours (uses 10 hours offset)
+
+const parseTime = (time: string): number => {
+  const [hours, minutes] = time.split(':').map(Number);
+  return hours * 60 + minutes;
+};
+
+const formatTime = (totalMinutes: number): string => {
+  // Handle overflow past midnight
+  const normalized = ((totalMinutes % 1440) + 1440) % 1440;
+  const hours = Math.floor(normalized / 60);
+  const minutes = normalized % 60;
+  return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+};
+
+const calculateCascadingTimes = (breakfastTime: string): { lunch: string; dinner: string } => {
+  const breakfastMinutes = parseTime(breakfastTime);
+  
+  // Lunch: 4-4.5 hours after breakfast (targeting around 12:00-12:30 PM for 8 AM breakfast)
+  const lunchMinutes = breakfastMinutes + 240; // 4 hours after breakfast
+  
+  // Dinner: 9.5-10 hours after breakfast (targeting around 5:30-6:00 PM for 8 AM breakfast)
+  const dinnerMinutes = breakfastMinutes + 570; // 9.5 hours after breakfast
+  
+  return {
+    lunch: formatTime(lunchMinutes),
+    dinner: formatTime(dinnerMinutes),
+  };
+};
+
 const createDefaultMeal = (type: MealType): Meal => ({
   type,
   time: DEFAULT_MEAL_TIMES[type],
@@ -34,13 +68,26 @@ export const useMealSchedule = () => {
   }, [schedule]);
 
   const updateMealTime = useCallback((mealType: MealType, time: string) => {
-    setSchedule(prev => ({
-      ...prev,
-      [mealType]: {
-        ...prev[mealType],
-        time,
-      },
-    }));
+    setSchedule(prev => {
+      if (mealType === 'breakfast') {
+        // Cascade changes to lunch and dinner
+        const { lunch, dinner } = calculateCascadingTimes(time);
+        return {
+          ...prev,
+          breakfast: { ...prev.breakfast, time },
+          lunch: { ...prev.lunch, time: lunch },
+          dinner: { ...prev.dinner, time: dinner },
+        };
+      }
+      // For lunch and dinner, just update that meal
+      return {
+        ...prev,
+        [mealType]: {
+          ...prev[mealType],
+          time,
+        },
+      };
+    });
   }, []);
 
   const addFood = useCallback((mealType: MealType, food: Omit<Food, 'id'>) => {
@@ -90,6 +137,28 @@ export const useMealSchedule = () => {
     setSchedule(createDefaultSchedule());
   }, []);
 
+  const setMealFoods = useCallback((mealType: MealType, foods: Omit<Food, 'id'>[]) => {
+    const newFoods: Food[] = foods.map(food => ({
+      ...food,
+      id: uuidv4(),
+    }));
+    setSchedule(prev => ({
+      ...prev,
+      [mealType]: {
+        ...prev[mealType],
+        foods: newFoods,
+      },
+    }));
+  }, []);
+
+  const resetAllMenus = useCallback(() => {
+    setSchedule(prev => ({
+      breakfast: { ...prev.breakfast, foods: [] },
+      lunch: { ...prev.lunch, foods: [] },
+      dinner: { ...prev.dinner, foods: [] },
+    }));
+  }, []);
+
   return {
     schedule,
     updateMealTime,
@@ -98,5 +167,7 @@ export const useMealSchedule = () => {
     removeFood,
     getMealHealthScore,
     resetToDefaults,
+    setMealFoods,
+    resetAllMenus,
   };
 };
