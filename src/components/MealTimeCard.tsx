@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Meal, MealType, MEAL_ICONS, MEAL_LABELS } from '@/types/meal';
-import { Clock, Edit2, Check } from 'lucide-react';
+import { Clock, Edit2, Check, Link } from 'lucide-react';
 
 interface MealTimeCardProps {
   meal: Meal;
@@ -43,9 +43,17 @@ export const MealTimeCard = ({ meal, onTimeChange, healthScore }: MealTimeCardPr
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <span className="text-3xl animate-float">{MEAL_ICONS[meal.type]}</span>
-            <CardTitle className="text-xl font-semibold text-foreground">
-              {MEAL_LABELS[meal.type]}
-            </CardTitle>
+            <div className="flex items-center gap-2">
+              <CardTitle className="text-xl font-semibold text-foreground">
+                {MEAL_LABELS[meal.type]}
+              </CardTitle>
+              {meal.type === 'breakfast' && (
+                <Badge variant="outline" className="text-xs border-primary/30 text-primary">
+                  <Link className="h-3 w-3 mr-1" />
+                  Primary
+                </Badge>
+              )}
+            </div>
           </div>
           {healthScore > 0 && (
             <div className={`text-lg font-bold ${getScoreColor(healthScore)}`}>

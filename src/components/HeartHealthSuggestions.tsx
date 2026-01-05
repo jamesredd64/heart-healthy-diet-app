@@ -1,47 +1,27 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Heart, Leaf, Droplets, Fish, Apple, Carrot } from 'lucide-react';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import { Heart } from 'lucide-react';
+import { HEART_HEALTHY_SUGGESTIONS } from '@/data/initialMenus';
+import { FoodImageCard } from './FoodImageCard';
+import { Food, MealType } from '@/types/meal';
 
-interface SuggestionItem {
-  name: string;
-  benefit: string;
-  icon: React.ReactNode;
+interface HeartHealthSuggestionsProps {
+  onAddFood?: (mealType: MealType, food: Omit<Food, 'id'>) => void;
 }
 
-const HEART_HEALTHY_SUGGESTIONS: SuggestionItem[] = [
-  {
-    name: 'Salmon',
-    benefit: 'Rich in omega-3 fatty acids',
-    icon: <Fish className="h-4 w-4" />,
-  },
-  {
-    name: 'Oatmeal',
-    benefit: 'Lowers cholesterol levels',
-    icon: <Leaf className="h-4 w-4" />,
-  },
-  {
-    name: 'Blueberries',
-    benefit: 'High in antioxidants',
-    icon: <Apple className="h-4 w-4" />,
-  },
-  {
-    name: 'Spinach',
-    benefit: 'Packed with heart-healthy nutrients',
-    icon: <Carrot className="h-4 w-4" />,
-  },
-  {
-    name: 'Olive Oil',
-    benefit: 'Healthy monounsaturated fats',
-    icon: <Droplets className="h-4 w-4" />,
-  },
-  {
-    name: 'Almonds',
-    benefit: 'Reduces bad cholesterol',
-    icon: <Leaf className="h-4 w-4" />,
-  },
-];
+export const HeartHealthSuggestions = ({ onAddFood }: HeartHealthSuggestionsProps) => {
+  const handleAddSuggestion = (suggestion: typeof HEART_HEALTHY_SUGGESTIONS[0]) => {
+    if (onAddFood) {
+      // Add to dinner by default - user can move it later
+      onAddFood('dinner', {
+        name: suggestion.name,
+        type: suggestion.type,
+        healthIndex: suggestion.healthIndex,
+        servingSize: suggestion.servingSize,
+      });
+    }
+  };
 
-export const HeartHealthSuggestions = () => {
   return (
     <Card className="border-sage/30 bg-gradient-to-br from-sage-soft to-accent/50 shadow-card">
       <CardHeader className="pb-3">
@@ -54,22 +34,21 @@ export const HeartHealthSuggestions = () => {
         <p className="mb-4 text-sm text-muted-foreground">
           Add these foods to your meals for better heart health:
         </p>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {HEART_HEALTHY_SUGGESTIONS.map((item) => (
-            <div
-              key={item.name}
-              className="group flex items-start gap-3 rounded-lg bg-card/70 p-3 shadow-soft transition-all duration-200 hover:bg-card hover:shadow-card"
-            >
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sage/10 text-sage transition-colors group-hover:bg-sage group-hover:text-primary-foreground">
-                {item.icon}
+        <ScrollArea className="w-full">
+          <div className="flex gap-3 pb-4">
+            {HEART_HEALTHY_SUGGESTIONS.map((item) => (
+              <div key={item.name} className="w-32 flex-shrink-0">
+                <FoodImageCard
+                  food={item}
+                  compact
+                  showAddButton={!!onAddFood}
+                  onSelect={() => handleAddSuggestion(item)}
+                />
               </div>
-              <div>
-                <h4 className="font-medium text-foreground">{item.name}</h4>
-                <p className="text-xs text-muted-foreground">{item.benefit}</p>
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+          <ScrollBar orientation="horizontal" />
+        </ScrollArea>
       </CardContent>
     </Card>
   );
