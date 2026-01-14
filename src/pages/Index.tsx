@@ -3,6 +3,7 @@ import { MealSection } from '@/components/MealSection';
 import { DailyOverview } from '@/components/DailyOverview';
 import { HeartHealthSuggestions } from '@/components/HeartHealthSuggestions';
 import { InitialMenuSelector } from '@/components/InitialMenuSelector';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import { MealType } from '@/types/meal';
 import { Heart } from 'lucide-react';
 
@@ -21,7 +22,7 @@ const Index = () => {
   const mealTypes: MealType[] = ['breakfast', 'lunch', 'dinner'];
 
   return (
-    <div className="min-h-screen w-full bg-gradient-hero">
+    <div className="min-h-screen w-full bg-gradient-hero dark:bg-background">
       {/* Header */}
       <header className="border-b border-border/30 bg-card/50 backdrop-blur-sm">
         <div className="w-full px-4 sm:px-6 lg:px-8 flex items-center justify-between py-4">
@@ -34,15 +35,18 @@ const Index = () => {
               <p className="text-[10px] sm:text-xs text-muted-foreground">Heart-Healthy Diet Planner</p>
             </div>
           </div>
-          <InitialMenuSelector
-            onSetInitialMenu={setMealFoods}
-            onResetAllMenus={resetAllMenus}
-            currentFoods={{
-              breakfast: schedule.breakfast.foods,
-              lunch: schedule.lunch.foods,
-              dinner: schedule.dinner.foods,
-            }}
-          />
+          <div className="flex items-center gap-2 sm:gap-3">
+            <InitialMenuSelector
+              onSetInitialMenu={setMealFoods}
+              onResetAllMenus={resetAllMenus}
+              currentFoods={{
+                breakfast: schedule.breakfast.foods,
+                lunch: schedule.lunch.foods,
+                dinner: schedule.dinner.foods,
+              }}
+            />
+            <ThemeToggle />
+          </div>
         </div>
       </header>
 
