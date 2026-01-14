@@ -1,7 +1,19 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Heart, ChevronDown } from 'lucide-react';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import { Heart, ChevronDown, RotateCcw } from 'lucide-react';
 import { HEART_HEALTHY_SUGGESTIONS } from '@/data/initialMenus';
 import { FoodImageCard } from './FoodImageCard';
 import { Food, MealType, MEAL_LABELS, MEAL_ICONS } from '@/types/meal';
@@ -9,13 +21,40 @@ import { useState } from 'react';
 
 interface HeartHealthSuggestionsProps {
   onAddFood?: (mealType: MealType, food: Omit<Food, 'id'>) => void;
+  addedSuggestions?: Record<MealType, string[]>;
+  onUpdateAddedSuggestions?: (mealType: MealType, foodNames: string[]) => void;
 }
 
-export const HeartHealthSuggestions = ({ onAddFood }: HeartHealthSuggestionsProps) => {
+export const HeartHealthSuggestions = ({ 
+  onAddFood,
+  addedSuggestions: externalAddedSuggestions,
+  onUpdateAddedSuggestions,
+}: HeartHealthSuggestionsProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedMeal, setSelectedMeal] = useState<MealType>('breakfast');
+  const [internalAddedSuggestions, setInternalAddedSuggestions] = useState<Record<MealType, string[]>>({
+    breakfast: [],
+    lunch: [],
+    dinner: [],
+  });
+
+  // Use external state if provided, otherwise use internal state
+  const addedSuggestions = externalAddedSuggestions || internalAddedSuggestions;
+  
+  const updateAddedSuggestions = (mealType: MealType, foodNames: string[]) => {
+    if (onUpdateAddedSuggestions) {
+      onUpdateAddedSuggestions(mealType, foodNames);
+    } else {
+      setInternalAddedSuggestions(prev => ({ ...prev, [mealType]: foodNames }));
+    }
+  };
 
   const handleAddSuggestion = (suggestion: typeof HEART_HEALTHY_SUGGESTIONS[0]) => {
+    // Check if already added to this meal
+    if (addedSuggestions[selectedMeal].includes(suggestion.name)) {
+      return;
+    }
+
     if (onAddFood) {
       onAddFood(selectedMeal, {
         name: suggestion.name,
@@ -23,8 +62,17 @@ export const HeartHealthSuggestions = ({ onAddFood }: HeartHealthSuggestionsProp
         healthIndex: suggestion.healthIndex,
         servingSize: suggestion.servingSize,
       });
+      
+      // Track that this suggestion was added to this meal
+      updateAddedSuggestions(selectedMeal, [...addedSuggestions[selectedMeal], suggestion.name]);
     }
   };
+
+  const handleResetMeal = () => {
+    updateAddedSuggestions(selectedMeal, []);
+  };
+
+  const getAddedCount = (mealType: MealType) => addedSuggestions[mealType].length;
 
   return (
     <Card className="border-sage/30 bg-gradient-to-br from-sage-soft to-accent/50 shadow-card">
@@ -57,6 +105,11 @@ export const HeartHealthSuggestions = ({ onAddFood }: HeartHealthSuggestionsProp
                     <span>{MEAL_ICONS[type]}</span>
                     <span className="hidden sm:inline">{MEAL_LABELS[type]}</span>
                     <span className="sm:hidden">{MEAL_LABELS[type].slice(0, 1)}</span>
+                    {getAddedCount(type) > 0 && (
+                      <span className="ml-1 rounded-full bg-primary/20 px-1.5 text-xs">
+                        {getAddedCount(type)}
+                      </span>
+                    )}
                   </TabsTrigger>
                 ))}
               </TabsList>
@@ -68,11 +121,44 @@ export const HeartHealthSuggestions = ({ onAddFood }: HeartHealthSuggestionsProp
                   key={item.name}
                   food={item}
                   compact
-                  showAddButton={!!onAddFood}
+                  isSelected={addedSuggestions[selectedMeal].includes(item.name)}
+                  showAddButton={!!onAddFood && !addedSuggestions[selectedMeal].includes(item.name)}
                   onSelect={() => handleAddSuggestion(item)}
                 />
               ))}
             </div>
+
+            {getAddedCount(selectedMeal) > 0 && (
+              <div className="mt-4 flex justify-end">
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="border-border/50 text-muted-foreground hover:border-primary hover:text-primary"
+                    >
+                      <RotateCcw className="mr-2 h-4 w-4" />
+                      Reset {MEAL_LABELS[selectedMeal]} Suggestions
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Reset {MEAL_LABELS[selectedMeal]} Suggestions?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This will clear all {getAddedCount(selectedMeal)} added suggestion{getAddedCount(selectedMeal) !== 1 ? 's' : ''} for {MEAL_LABELS[selectedMeal].toLowerCase()}. 
+                        This action cannot be undone.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction onClick={handleResetMeal}>
+                        Reset
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
+            )}
           </CardContent>
         </CollapsibleContent>
       </Collapsible>

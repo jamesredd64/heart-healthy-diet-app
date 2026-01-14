@@ -2,6 +2,17 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { MealType, Food, MEAL_LABELS, MEAL_ICONS } from '@/types/meal';
@@ -156,15 +167,32 @@ export const InitialMenuSelector = ({
         </DialogContent>
       </Dialog>
 
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={handleQuickReset}
-        className="border-border/50 text-muted-foreground hover:border-primary hover:text-primary"
-      >
-        <RotateCcw className="mr-2 h-4 w-4" />
-        Reset
-      </Button>
+      <AlertDialog>
+        <AlertDialogTrigger asChild>
+          <Button
+            variant="outline"
+            size="sm"
+            className="border-border/50 text-muted-foreground hover:border-primary hover:text-primary"
+          >
+            <RotateCcw className="mr-2 h-4 w-4" />
+            Reset
+          </Button>
+        </AlertDialogTrigger>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Reset All Menus?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will clear all foods from breakfast, lunch, and dinner. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleQuickReset}>
+              Reset All
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
