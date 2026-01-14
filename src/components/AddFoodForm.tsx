@@ -6,6 +6,19 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Slider } from '@/components/ui/slider';
 import { FoodType, FOOD_TYPE_LABELS, Food } from '@/types/meal';
 import { Plus, Heart } from 'lucide-react';
+import { z } from 'zod';
+
+const foodSchema = z.object({
+  name: z.string()
+    .min(1, 'Name is required')
+    .max(100, 'Name must be less than 100 characters')
+    .regex(/^[a-zA-Z0-9\s,.\-'()]+$/, 'Name contains invalid characters'),
+  servingSize: z.string()
+    .max(50, 'Serving size must be less than 50 characters')
+    .regex(/^[a-zA-Z0-9\s/.'\-()]*$/, 'Serving size contains invalid characters')
+    .optional()
+    .or(z.literal('')),
+});
 
 interface AddFoodFormProps {
   onAdd: (food: Omit<Food, 'id'>) => void;
@@ -16,16 +29,33 @@ export const AddFoodForm = ({ onAdd }: AddFoodFormProps) => {
   const [type, setType] = useState<FoodType>('protein');
   const [healthIndex, setHealthIndex] = useState(5);
   const [servingSize, setServingSize] = useState('');
+  const [errors, setErrors] = useState<{ name?: string; servingSize?: string }>({});
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) return;
+    
+    const result = foodSchema.safeParse({
+      name: name.trim(),
+      servingSize: servingSize.trim() || undefined,
+    });
+
+    if (!result.success) {
+      const fieldErrors: { name?: string; servingSize?: string } = {};
+      result.error.errors.forEach((err) => {
+        if (err.path[0] === 'name') fieldErrors.name = err.message;
+        if (err.path[0] === 'servingSize') fieldErrors.servingSize = err.message;
+      });
+      setErrors(fieldErrors);
+      return;
+    }
+
+    setErrors({});
 
     onAdd({
-      name: name.trim(),
+      name: result.data.name,
       type,
       healthIndex,
-      servingSize: servingSize.trim() || undefined,
+      servingSize: result.data.servingSize || undefined,
     });
 
     // Reset form
@@ -58,10 +88,17 @@ export const AddFoodForm = ({ onAdd }: AddFoodFormProps) => {
           <Input
             id="name"
             value={name}
-            onChange={(e) => setName(e.target.value)}
+            onChange={(e) => {
+              setName(e.target.value);
+              if (errors.name) setErrors(prev => ({ ...prev, name: undefined }));
+            }}
             placeholder="e.g., Grilled Salmon"
-            className="border-border/50 bg-background focus:border-primary"
+            maxLength={100}
+            className={`border-border/50 bg-background focus:border-primary ${errors.name ? 'border-destructive' : ''}`}
           />
+          {errors.name && (
+            <p className="text-xs text-destructive">{errors.name}</p>
+          )}
         </div>
 
         <div className="space-y-2">
@@ -117,10 +154,17 @@ export const AddFoodForm = ({ onAdd }: AddFoodFormProps) => {
         <Input
           id="serving"
           value={servingSize}
-          onChange={(e) => setServingSize(e.target.value)}
+          onChange={(e) => {
+            setServingSize(e.target.value);
+            if (errors.servingSize) setErrors(prev => ({ ...prev, servingSize: undefined }));
+          }}
           placeholder="e.g., 4 oz"
-          className="border-border/50 bg-background focus:border-primary"
+          maxLength={50}
+          className={`border-border/50 bg-background focus:border-primary ${errors.servingSize ? 'border-destructive' : ''}`}
         />
+        {errors.servingSize && (
+          <p className="text-xs text-destructive">{errors.servingSize}</p>
+        )}
       </div>
 
       <Button
